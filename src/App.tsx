@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Github, ExternalLink, Activity, Bug, BarChart3, Monitor } from 'lucide-react';
+import { Shield, Github, ExternalLink, Activity, Bug, BarChart3, Monitor, Download } from 'lucide-react';
 import { RealTimeURLInput } from './components/RealTimeURLInput';
 import { RealTimeAnalysisResults } from './components/RealTimeAnalysisResults';
 import { ScanHistory } from './components/ScanHistory';
@@ -7,6 +7,7 @@ import { AdvancedStatistics } from './components/AdvancedStatistics';
 import { SystemStatusMonitor } from './components/SystemStatusMonitor';
 import { RealTimeSecurityAnalyzer } from './utils/realTimeAnalyzer';
 import { AnalysisResult, ScanHistory as ScanHistoryType, SystemStatus } from './types';
+import { useElectron } from './hooks/useElectron';
 
 function App() {
   const [currentResult, setCurrentResult] = useState<AnalysisResult | null>(null);
@@ -20,6 +21,8 @@ function App() {
     lastActivity: Date.now(),
     protectionLevel: 'enhanced'
   });
+  
+  const { isElectron, appVersion, exportResults, setupMenuHandlers, cleanup } = useElectron();
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -32,6 +35,26 @@ function App() {
     if (savedSystemStatus) {
       setSystemStatus(JSON.parse(savedSystemStatus));
     }
+    
+    // Setup Electron menu handlers
+    if (isElectron) {
+      setupMenuHandlers({
+        onNewAnalysis: () => {
+          setCurrentResult(null);
+          setActiveTab('analyze');
+        },
+        onToggleSystem: handleToggleSystem,
+        onClearHistory: handleClearHistory,
+        onProtectionLevel: handleChangeProtectionLevel,
+        onSwitchTab: (tab) => setActiveTab(tab as any)
+      });
+    }
+    
+    return () => {
+      if (isElectron) {
+        cleanup();
+      }
+    };
   }, []);
 
   // Save data to localStorage whenever it changes
@@ -124,6 +147,31 @@ function App() {
   const handleSelectScan = (url: string) => {
     if (systemStatus.isActive) {
       handleAnalyze(url);
+    }
+  };
+  
+  const handleExportResults = async () => {
+    const exportData = {
+      timestamp: Date.now(),
+      systemStatus,
+      scanHistory,
+      currentResult,
+      appVersion: isElectron ? appVersion : '1.0.0-web'
+    };
+    
+    if (isElectron) {
+      await exportResults(exportData);
+    } else {
+      // Web fallback
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'phishtrap-results.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
   };
 
