@@ -194,14 +194,24 @@ function App() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  PhishTrap Real-Time
+                  PhishTrap Real-Time {isElectron && <span className="text-sm text-gray-500">Desktop v{appVersion}</span>}
                 </h1>
                 <p className="text-sm text-gray-600">
-                  Real-Time Website Security Analysis • Live Threat Detection • Actual Results
+                  Real-Time Website Security Analysis • Live Threat Detection • {isElectron ? 'Desktop Application' : 'Web Application'}
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              {/* Export Button */}
+              <button
+                onClick={handleExportResults}
+                className="flex items-center space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Export Results"
+              >
+                <Download size={16} />
+                <span className="text-sm font-medium text-gray-700">Export</span>
+              </button>
+              
               {/* System Status Indicator */}
               <div className="flex items-center space-x-2 px-3 py-2 bg-gray-100 rounded-lg">
                 <div className={`w-2 h-2 rounded-full ${systemStatus.isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
